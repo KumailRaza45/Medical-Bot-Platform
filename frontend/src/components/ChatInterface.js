@@ -489,10 +489,18 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
             className={`voice-btn ${isRecording ? 'recording' : ''}`}
             onClick={startVoiceInput}
             disabled={isLoading}
-            title={language === 'en' ? 'Voice input' : 'آوازی انپٹ'}
+            title={language === 'en' ? (isRecording ? 'Stop recording' : 'Voice input') : (isRecording ? 'ریکارڈنگ بند کریں' : 'آوازی انپٹ')}
           >
             <Mic size={20} />
+            {isRecording && (
+              <span className="recording-pulse"></span>
+            )}
           </button>
+          {isRecording && (
+            <span className="recording-status">
+              {language === 'en' ? '🔴 Recording...' : '🔴 ریکارڈنگ...'}
+            </span>
+          )}
           <textarea
             ref={inputRef}
             value={inputValue}
