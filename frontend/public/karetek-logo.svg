@@ -1,0 +1,15 @@
+<svg width="300" height="100" viewBox="0 0 1542 638" xmlns="http://www.w3.org/2000/svg">
+  <!-- Kare (green) -->
+  <text x="0" y="400" font-family="Arial, sans-serif" font-size="350" font-weight="bold" fill="#3CB043">Kare</text>
+  <!-- + symbol -->
+  <rect x="890" y="30" width="120" height="100" fill="#0F3F5F"/>
+  <rect x="850" y="70" width="200" height="20" fill="#0F3F5F"/>
+  <!-- tek (dark blue) -->
+  <text x="1050" y="400" font-family="Arial, sans-serif" font-size="350" font-weight="bold" fill="#0F3F5F">tek</text>
+  <!-- Heartbeat line -->
+  <polyline points="450,500 500,500 520,450 540,550 560,450 580,520 600,500 1350,500 1370,480 1380,520 1390,480 1400,500" 
+            fill="none" stroke="#0076BC" stroke-width="8"/>
+  <!-- Heart -->
+  <path d="M 1300,520 Q 1280,490 1300,470 Q 1320,450 1340,470 Q 1360,450 1380,470 Q 1400,490 1380,520 L 1340,560 Z" 
+        fill="#0F3F5F"/>
+</svg>

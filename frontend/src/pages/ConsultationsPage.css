@@ -1,0 +1,425 @@
+/* Consultations Page Styles */
+.consultations-page {
+  min-height: 100vh;
+  background: var(--gray-50);
+}
+
+.consultations-main {
+  padding: 2rem 0 4rem;
+}
+
+.consultations-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Page Header */
+.consultations-page .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.consultations-page .page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.consultations-page .page-header h1 svg {
+  color: var(--primary-500);
+}
+
+.consultations-page .page-header p {
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* Search Bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  margin-bottom: 1.5rem;
+}
+
+.search-bar svg {
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.search-bar input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.9375rem;
+  outline: none;
+}
+
+.search-bar input::placeholder {
+  color: var(--gray-400);
+}
+
+/* Consultations Layout */
+.consultations-layout {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 1.5rem;
+  min-height: 600px;
+}
+
+/* Consultations List Panel */
+.consultations-list-panel {
+  background: white;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+
+.consultations-list {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.consultation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.consultation-item:hover {
+  background: var(--gray-50);
+}
+
+.consultation-item.selected {
+  background: var(--primary-50);
+  border-left: 3px solid var(--primary-500);
+}
+
+.consultation-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--primary-100);
+  border-radius: var(--radius-lg);
+  color: var(--primary-600);
+  flex-shrink: 0;
+}
+
+.consultation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.consultation-info h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+}
+
+.consultation-preview {
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.consultation-meta {
+  display: flex;
+  gap: 1rem;
+}
+
+.consultation-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.chevron {
+  color: var(--gray-400);
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+}
+
+/* Consultation Detail Panel */
+.consultation-detail-panel {
+  background: white;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+
+.consultation-detail {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-header h2 {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.detail-meta {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.detail-meta svg {
+  color: var(--primary-500);
+}
+
+.detail-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.summary-section,
+.messages-section {
+  margin-bottom: 2rem;
+}
+
+.summary-section h3,
+.messages-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--gray-900);
+}
+
+.summary-section h3 svg,
+.messages-section h3 svg {
+  color: var(--primary-500);
+}
+
+.summary-text {
+  background: var(--gray-50);
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--gray-700);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* Messages List */
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.messages-list .message {
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+}
+
+.messages-list .message.user {
+  background: var(--primary-50);
+  margin-left: 2rem;
+}
+
+.messages-list .message.assistant {
+  background: var(--gray-50);
+  margin-right: 2rem;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.message-role {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+}
+
+.message-content {
+  font-size: 0.9375rem;
+  color: var(--gray-700);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Detail Footer */
+.detail-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+
+.disclaimer {
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+}
+
+.disclaimer strong {
+  color: var(--gray-700);
+}
+
+.detail-footer .btn {
+  width: 100%;
+}
+
+/* No Selection State */
+.no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+}
+
+.no-selection svg {
+  color: var(--gray-300);
+  margin-bottom: 1rem;
+}
+
+.no-selection h3 {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.no-selection p {
+  color: var(--gray-500);
+}
+
+/* Empty State */
+.consultations-list-panel .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 3rem;
+  text-align: center;
+}
+
+.consultations-list-panel .empty-state svg {
+  color: var(--gray-300);
+  margin-bottom: 1rem;
+}
+
+.consultations-list-panel .empty-state h3 {
+  margin-bottom: 0.5rem;
+}
+
+.consultations-list-panel .empty-state p {
+  color: var(--gray-500);
+  margin-bottom: 1.5rem;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 3rem;
+}
+
+.loading-state p {
+  margin-top: 1rem;
+  color: var(--gray-500);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .consultations-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .consultations-list {
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .consultations-page .page-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .detail-meta {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .messages-list .message.user {
+    margin-left: 0;
+  }
+
+  .messages-list .message.assistant {
+    margin-right: 0;
+  }
+}

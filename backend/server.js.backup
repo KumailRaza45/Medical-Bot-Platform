@@ -1,0 +1,823 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { v4: uuidv4 } = require('uuid');
+const OpenAI = require('openai');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// In-memory storage (replace with database in production)
+const users = new Map();
+const healthRecords = new Map();
+const appointments = new Map();
+const consultations = new Map();
+const chatSessions = new Map();
+
+// Middleware
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
+app.use(express.json({ limit: '10mb' }));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api/', limiter);
+
+// Auth Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'default_secret', (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Optional auth - doesn't require token but attaches user if present
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token) {
+    jwt.verify(token, process.env.JWT_SECRET || 'default_secret', (err, user) => {
+      if (!err) {
+        req.user = user;
+      }
+    });
+  }
+  next();
+};
+
+// ==================== AUTH ROUTES ====================
+
+// Register
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, firstName, lastName, dateOfBirth, gender } = req.body;
+
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (users.has(email)) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const userId = uuidv4();
+    
+    const user = {
+      id: userId,
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+      dateOfBirth,
+      gender,
+      createdAt: new Date().toISOString(),
+      hipaaConsent: true,
+      privacyConsent: true
+    };
+
+    users.set(email, user);
+    
+    // Initialize empty health record
+    healthRecords.set(userId, {
+      userId,
+      allergies: [],
+      medications: [],
+      conditions: [],
+      surgeries: [],
+      familyHistory: [],
+      vitals: [],
+      labResults: [],
+      immunizations: [],
+      updatedAt: new Date().toISOString()
+    });
+
+    const token = jwt.sign(
+      { userId, email },
+      process.env.JWT_SECRET || 'default_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      message: 'Registration successful',
+      token,
+      user: {
+        id: userId,
+        email,
+        firstName,
+        lastName
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = users.get(email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, email },
+      process.env.JWT_SECRET || 'default_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Get current user
+app.get('/api/auth/me', authenticateToken, (req, res) => {
+  const user = Array.from(users.values()).find(u => u.id === req.user.userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  res.json({
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    dateOfBirth: user.dateOfBirth,
+    gender: user.gender
+  });
+});
+
+// ==================== AI CHAT ROUTES ====================
+
+const MEDICAL_SYSTEM_PROMPT = `You are Karetek, a compassionate and knowledgeable AI medical assistant. You are trained by top human doctors on the latest medical data.
+
+IMPORTANT: You ONLY answer medical and health-related questions. If a user asks about non-medical topics (like sports, politics, entertainment, general knowledge, coding, etc.), politely decline and redirect them to ask health-related questions.
+
+IMPORTANT GUIDELINES:
+1. Always be empathetic, professional, and thorough in your responses
+2. Ask clarifying questions to understand symptoms better
+3. Never provide definitive diagnoses - always recommend consulting a licensed healthcare provider
+4. For emergencies, immediately advise calling 911 or visiting an ER
+5. Provide general health information and educational content
+6. Respect patient privacy and maintain HIPAA compliance principles
+7. When appropriate, suggest scheduling a video consultation with a licensed doctor
+8. ONLY respond to medical, health, wellness, mental health, nutrition, fitness, and healthcare-related questions
+9. For non-medical questions, respond with: "I'm a medical assistant and can only help with health-related questions. Please ask me about your symptoms, health concerns, medications, or general wellness topics."
+
+RESPONSE FORMAT:
+- Be conversational and warm
+- Use simple language, avoid excessive medical jargon
+- Ask follow-up questions when needed
+- Provide actionable advice when appropriate
+- Include relevant health education
+- End serious consultations with a recommendation to see a doctor
+
+Remember: You are an AI assistant, not a replacement for professional medical care. Always encourage users to consult with licensed healthcare providers for proper diagnosis and treatment.`;
+
+const MEDICAL_SYSTEM_PROMPT_URDU = `آپ کیریٹیک ہیں، ایک ہمدرد اور علم والے AI طبی معاون۔ آپ کو اعلیٰ انسانی ڈاکٹروں نے تازہ ترین طبی ڈیٹا پر تربیت دی ہے۔
+
+اہم: آپ صرف طبی اور صحت سے متعلقہ سوالات کے جوابات دیتے ہیں۔ اگر صارف غیر طبی موضوعات (جیسے کھیل، سیاست، تفریح، عام معلومات، کوڈنگ وغیرہ) کے بارے میں پوچھے، تو شائستگی سے انکار کریں اور انہیں صحت سے متعلق سوالات پوچھنے کی ترغیب دیں۔
+
+اہم ہدایات:
+1. ہمیشہ ہمدردی، پیشہ ورانہ، اور مکمل جوابات دیں
+2. علامات کو بہتر طریقے سے سمجھنے کے لیے واضح سوالات پوچھیں
+3. کبھی بھی حتمی تشخیص فراہم نہ کریں - ہمیشہ لائسنس یافتہ صحت کی دیکھ بھال فراہم کنندہ سے مشورہ کرنے کی سفارش کریں
+4. ایمرجنسی کی صورت میں، فوری طور پر 911 پر کال کرنے یا ER جانے کا مشورہ دیں
+5. عام صحت کی معلومات اور تعلیمی مواد فراہم کریں
+6. مریض کی رازداری کا احترام کریں اور HIPAA تعمیل کے اصولوں کو برقرار رکھیں
+7. جب مناسب ہو، لائسنس یافتہ ڈاکٹر کے ساتھ ویڈیو مشاورت شیڈول کرنے کی تجویز دیں
+8. صرف طبی، صحت، تندرستی، ذہنی صحت، غذائیت، فٹنس، اور صحت کی دیکھ بھال سے متعلقہ سوالات کا جواب دیں
+9. غیر طبی سوالات کے لیے، جواب دیں: "میں ایک طبی معاون ہوں اور صرف صحت سے متعلق سوالات میں مدد کر سکتا ہوں۔ براہ کرم مجھ سے اپنی علامات، صحت کے خدشات، ادویات، یا عام تندرستی کے موضوعات کے بارے میں پوچھیں۔"
+
+جواب کی شکل:
+- بات چیت میں دوستانہ اور گرم جوش رہیں
+- سادہ زبان استعمال کریں، زیادہ طبی اصطلاحات سے پرہیز کریں
+- ضرورت پڑنے پر فالو اپ سوالات پوچھیں
+- جب مناسب ہو قابل عمل مشورہ فراہم کریں
+- متعلقہ صحت کی تعلیم شامل کریں
+- سنجیدہ مشاورت کو ڈاکٹر سے ملنے کی سفارش کے ساتھختم کریں
+
+یاد رکھیں: آپ ایک AI معاون ہیں، پیشہ ورانہ طبی دیکھ بھال کا متبادل نہیں۔ ہمیشہ صارفین کی حوصلہ افزائی کریں کہ وہ مناسب تشخیص اور علاج کے لیے لائسنس یافتہ صحت کی دیکھ بھال فراہم کنندگان سے مشورہ کریں۔
+
+نوٹ: براہ کرم اردو میں جواب دیں۔`;
+
+// Start new chat session
+app.post('/api/chat/session', optionalAuth, (req, res) => {
+  const sessionId = uuidv4();
+  const { gender, initialMessage, language } = req.body;
+  
+  chatSessions.set(sessionId, {
+    id: sessionId,
+    userId: req.user?.userId || null,
+    gender: gender || 'not_specified',
+    language: language || 'en',
+    messages: [],
+    createdAt: new Date().toISOString(),
+    status: 'active'
+  });
+
+  res.json({ sessionId });
+});
+
+// Send message to AI
+app.post('/api/chat/message', optionalAuth, async (req, res) => {
+  try {
+    const { sessionId, message, language } = req.body;
+
+    if (!sessionId || !message) {
+      return res.status(400).json({ error: 'Session ID and message are required' });
+    }
+
+    let session = chatSessions.get(sessionId);
+    if (!session) {
+      // Create new session if doesn't exist
+      session = {
+        id: sessionId,
+        userId: req.user?.userId || null,
+        gender: 'not_specified',
+        language: language || 'en',
+        messages: [],
+        createdAt: new Date().toISOString(),
+        status: 'active'
+      };
+      chatSessions.set(sessionId, session);
+    }
+
+    // Update session language if provided
+    if (language) {
+      session.language = language;
+    }
+
+    // Add user message to history
+    session.messages.push({
+      role: 'user',
+      content: message,
+      timestamp: new Date().toISOString()
+    });
+
+    // Build conversation history for OpenAI
+    const conversationHistory = session.messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    // Get appropriate system prompt based on language
+    const systemPrompt = session.language === 'ur' ? MEDICAL_SYSTEM_PROMPT_URDU : MEDICAL_SYSTEM_PROMPT;
+
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...conversationHistory
+      ],
+      max_tokens: 1000,
+      temperature: 0.7,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1
+    });
+
+    const assistantMessage = completion.choices[0].message.content;
+
+    // Add assistant response to history
+    session.messages.push({
+      role: 'assistant',
+      content: assistantMessage,
+      timestamp: new Date().toISOString()
+    });
+
+    // Check for emergency keywords (English and Urdu)
+    const emergencyKeywords = [
+      'chest pain', 'difficulty breathing', 'severe bleeding', 'unconscious', 'stroke', 'heart attack', 'suicide', 'overdose',
+      'سینے میں درد', 'سانس لینے میں دشواری', 'شدید خون بہنا', 'بے ہوش', 'فالج', 'دل کا دورہ', 'خودکشی'
+    ];
+    const isEmergency = emergencyKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    res.json({
+      response: assistantMessage,
+      sessionId,
+      isEmergency,
+      messageCount: session.messages.length
+    });
+
+  } catch (error) {
+    console.error('Chat error:', error);
+    
+    if (error.code === 'insufficient_quota' || error.status === 429) {
+      return res.status(429).json({ 
+        error: 'AI service is currently busy. Please try again in a moment.',
+        response: "I apologize, but I'm experiencing high demand right now. Please try again in a moment, or if this is urgent, please contact a healthcare provider directly."
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to process message',
+      response: "I apologize, but I'm having trouble processing your request right now. If this is a medical emergency, please call 911 immediately."
+    });
+  }
+});
+
+// Get chat history
+app.get('/api/chat/history/:sessionId', optionalAuth, (req, res) => {
+  const session = chatSessions.get(req.params.sessionId);
+  
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+
+  res.json({
+    sessionId: session.id,
+    messages: session.messages,
+    createdAt: session.createdAt
+  });
+});
+
+// Translate message
+app.post('/api/chat/translate', optionalAuth, async (req, res) => {
+  try {
+    const { text, targetLanguage } = req.body;
+
+    if (!text || !targetLanguage) {
+      return res.status(400).json({ error: 'Text and target language are required' });
+    }
+
+    const translationPrompt = targetLanguage === 'ur' 
+      ? 'Translate the following text to Urdu. Maintain medical accuracy and tone:'
+      : 'Translate the following text to English. Maintain medical accuracy and tone:';
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: translationPrompt },
+        { role: 'user', content: text }
+      ],
+      max_tokens: 500,
+      temperature: 0.3
+    });
+
+    const translatedText = completion.choices[0].message.content;
+
+    res.json({ translatedText });
+  } catch (error) {
+    console.error('Translation error:', error);
+    res.status(500).json({ error: 'Translation failed' });
+  }
+});
+
+// Generate consultation summary
+app.post('/api/chat/summary/:sessionId', optionalAuth, async (req, res) => {
+  try {
+    const session = chatSessions.get(req.params.sessionId);
+    
+    if (!session || session.messages.length === 0) {
+      return res.status(404).json({ error: 'No consultation found' });
+    }
+
+    const conversationText = session.messages
+      .map(m => `${m.role === 'user' ? 'Patient' : 'MediBot'}: ${m.content}`)
+      .join('\n\n');
+
+    const summaryPrompt = `Based on the following medical consultation, generate a comprehensive summary in the following format:
+
+CONSULTATION SUMMARY:
+1. Chief Complaint: (Main reason for consultation)
+2. Symptoms Discussed: (List of symptoms mentioned)
+3. Relevant History: (Any medical history mentioned)
+4. Assessment: (Possible conditions considered - always note these are possibilities, not diagnoses)
+5. Recommendations: (Suggested next steps)
+6. Urgency Level: (Low/Medium/High/Emergency)
+7. Follow-up Recommended: (Yes/No and why)
+
+Consultation transcript:
+${conversationText}`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You are a medical documentation assistant. Create clear, professional consultation summaries.' },
+        { role: 'user', content: summaryPrompt }
+      ],
+      max_tokens: 1000,
+      temperature: 0.3
+    });
+
+    const summary = completion.choices[0].message.content;
+
+    // Save consultation
+    const consultationId = uuidv4();
+    consultations.set(consultationId, {
+      id: consultationId,
+      sessionId: session.id,
+      userId: req.user?.userId || null,
+      summary,
+      messages: session.messages,
+      createdAt: new Date().toISOString()
+    });
+
+    res.json({
+      consultationId,
+      summary,
+      sessionId: session.id
+    });
+
+  } catch (error) {
+    console.error('Summary generation error:', error);
+    res.status(500).json({ error: 'Failed to generate summary' });
+  }
+});
+
+// ==================== HEALTH RECORDS ROUTES ====================
+
+// Get health record
+app.get('/api/health-records', authenticateToken, (req, res) => {
+  const record = healthRecords.get(req.user.userId);
+  
+  if (!record) {
+    return res.status(404).json({ error: 'Health record not found' });
+  }
+
+  res.json(record);
+});
+
+// Update health record
+app.put('/api/health-records', authenticateToken, (req, res) => {
+  const { allergies, medications, conditions, surgeries, familyHistory, vitals } = req.body;
+  
+  let record = healthRecords.get(req.user.userId);
+  
+  if (!record) {
+    record = {
+      userId: req.user.userId,
+      allergies: [],
+      medications: [],
+      conditions: [],
+      surgeries: [],
+      familyHistory: [],
+      vitals: [],
+      labResults: [],
+      immunizations: []
+    };
+  }
+
+  record = {
+    ...record,
+    allergies: allergies || record.allergies,
+    medications: medications || record.medications,
+    conditions: conditions || record.conditions,
+    surgeries: surgeries || record.surgeries,
+    familyHistory: familyHistory || record.familyHistory,
+    vitals: vitals || record.vitals,
+    updatedAt: new Date().toISOString()
+  };
+
+  healthRecords.set(req.user.userId, record);
+
+  res.json({ message: 'Health record updated', record });
+});
+
+// Add medication
+app.post('/api/health-records/medications', authenticateToken, (req, res) => {
+  const { name, dosage, frequency, startDate, prescribedBy, notes } = req.body;
+  
+  let record = healthRecords.get(req.user.userId);
+  if (!record) {
+    return res.status(404).json({ error: 'Health record not found' });
+  }
+
+  const medication = {
+    id: uuidv4(),
+    name,
+    dosage,
+    frequency,
+    startDate,
+    prescribedBy,
+    notes,
+    addedAt: new Date().toISOString()
+  };
+
+  record.medications.push(medication);
+  record.updatedAt = new Date().toISOString();
+  healthRecords.set(req.user.userId, record);
+
+  res.status(201).json({ message: 'Medication added', medication });
+});
+
+// Add allergy
+app.post('/api/health-records/allergies', authenticateToken, (req, res) => {
+  const { allergen, reaction, severity } = req.body;
+  
+  let record = healthRecords.get(req.user.userId);
+  if (!record) {
+    return res.status(404).json({ error: 'Health record not found' });
+  }
+
+  const allergy = {
+    id: uuidv4(),
+    allergen,
+    reaction,
+    severity,
+    addedAt: new Date().toISOString()
+  };
+
+  record.allergies.push(allergy);
+  record.updatedAt = new Date().toISOString();
+  healthRecords.set(req.user.userId, record);
+
+  res.status(201).json({ message: 'Allergy added', allergy });
+});
+
+// Add condition
+app.post('/api/health-records/conditions', authenticateToken, (req, res) => {
+  const { name, diagnosedDate, status, notes } = req.body;
+  
+  let record = healthRecords.get(req.user.userId);
+  if (!record) {
+    return res.status(404).json({ error: 'Health record not found' });
+  }
+
+  const condition = {
+    id: uuidv4(),
+    name,
+    diagnosedDate,
+    status,
+    notes,
+    addedAt: new Date().toISOString()
+  };
+
+  record.conditions.push(condition);
+  record.updatedAt = new Date().toISOString();
+  healthRecords.set(req.user.userId, record);
+
+  res.status(201).json({ message: 'Condition added', condition });
+});
+
+// ==================== APPOINTMENTS ROUTES ====================
+
+// Get available time slots
+app.get('/api/appointments/slots', (req, res) => {
+  const { date } = req.query;
+  
+  // Generate available slots for demo
+  const slots = [];
+  const baseDate = date ? new Date(date) : new Date();
+  
+  for (let hour = 9; hour < 18; hour++) {
+    for (let min of [0, 30]) {
+      const slotTime = new Date(baseDate);
+      slotTime.setHours(hour, min, 0, 0);
+      
+      if (slotTime > new Date()) {
+        slots.push({
+          id: uuidv4(),
+          time: slotTime.toISOString(),
+          available: Math.random() > 0.3 // 70% availability for demo
+        });
+      }
+    }
+  }
+
+  res.json({ slots });
+});
+
+// Book appointment
+app.post('/api/appointments', authenticateToken, (req, res) => {
+  const { dateTime, type, reason, doctorPreference } = req.body;
+
+  if (!dateTime || !type) {
+    return res.status(400).json({ error: 'Date/time and appointment type are required' });
+  }
+
+  const appointment = {
+    id: uuidv4(),
+    userId: req.user.userId,
+    dateTime,
+    type, // 'video' or 'in-person'
+    reason,
+    doctorPreference,
+    status: 'confirmed',
+    doctor: {
+      id: uuidv4(),
+      name: 'Dr. Sarah Mitchell',
+      specialty: 'Family Medicine',
+      photo: '/doctors/default.jpg'
+    },
+    videoLink: type === 'video' ? `https://meet.medibot.health/${uuidv4()}` : null,
+    createdAt: new Date().toISOString()
+  };
+
+  appointments.set(appointment.id, appointment);
+
+  res.status(201).json({
+    message: 'Appointment booked successfully',
+    appointment
+  });
+});
+
+// Get user appointments
+app.get('/api/appointments', authenticateToken, (req, res) => {
+  const userAppointments = Array.from(appointments.values())
+    .filter(apt => apt.userId === req.user.userId)
+    .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+  res.json({ appointments: userAppointments });
+});
+
+// Cancel appointment
+app.delete('/api/appointments/:id', authenticateToken, (req, res) => {
+  const appointment = appointments.get(req.params.id);
+
+  if (!appointment) {
+    return res.status(404).json({ error: 'Appointment not found' });
+  }
+
+  if (appointment.userId !== req.user.userId) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  appointments.delete(req.params.id);
+
+  res.json({ message: 'Appointment cancelled' });
+});
+
+// ==================== CONSULTATIONS ROUTES ====================
+
+// Get user consultations
+app.get('/api/consultations', authenticateToken, (req, res) => {
+  const userConsultations = Array.from(consultations.values())
+    .filter(c => c.userId === req.user.userId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  res.json({ consultations: userConsultations });
+});
+
+// Get single consultation
+app.get('/api/consultations/:id', authenticateToken, (req, res) => {
+  const consultation = consultations.get(req.params.id);
+
+  if (!consultation) {
+    return res.status(404).json({ error: 'Consultation not found' });
+  }
+
+  if (consultation.userId !== req.user.userId) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  res.json(consultation);
+});
+
+// ==================== DOCTORS ROUTES ====================
+
+// Get available doctors
+app.get('/api/doctors', (req, res) => {
+  const doctors = [
+    {
+      id: '1',
+      name: 'Dr. Sarah Mitchell',
+      specialty: 'Family Medicine',
+      rating: 4.9,
+      reviews: 234,
+      experience: '15 years',
+      education: 'Harvard Medical School',
+      languages: ['English', 'Spanish'],
+      available: true,
+      nextAvailable: 'Today',
+      price: 39
+    },
+    {
+      id: '2',
+      name: 'Dr. James Chen',
+      specialty: 'Internal Medicine',
+      rating: 4.8,
+      reviews: 189,
+      experience: '12 years',
+      education: 'Johns Hopkins University',
+      languages: ['English', 'Mandarin'],
+      available: true,
+      nextAvailable: 'Today',
+      price: 39
+    },
+    {
+      id: '3',
+      name: 'Dr. Emily Rodriguez',
+      specialty: 'Dermatology',
+      rating: 4.9,
+      reviews: 312,
+      experience: '10 years',
+      education: 'Stanford University',
+      languages: ['English', 'Spanish'],
+      available: true,
+      nextAvailable: 'Tomorrow',
+      price: 49
+    },
+    {
+      id: '4',
+      name: 'Dr. Michael Thompson',
+      specialty: 'Psychiatry',
+      rating: 4.7,
+      reviews: 156,
+      experience: '18 years',
+      education: 'Yale School of Medicine',
+      languages: ['English'],
+      available: true,
+      nextAvailable: 'Today',
+      price: 59
+    }
+  ];
+
+  res.json({ doctors });
+});
+
+// ==================== STATS ROUTE ====================
+
+app.get('/api/stats', (req, res) => {
+  res.json({
+    totalConsultations: 19509522 + consultations.size,
+    activeUsers: users.size,
+    doctorsAvailable: 4,
+    avgResponseTime: '< 30 seconds'
+  });
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: 'Something went wrong!',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🏥 MediBot Server running on port ${PORT}`);
+  console.log(`📋 HIPAA-compliant medical consultation platform`);
+  console.log(`🤖 AI Chat endpoint: /api/chat/message`);
+  console.log(`📅 Appointments endpoint: /api/appointments`);
+  console.log(`📁 Health Records endpoint: /api/health-records`);
+});
+
+module.exports = app;

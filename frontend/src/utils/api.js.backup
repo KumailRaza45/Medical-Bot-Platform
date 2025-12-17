@@ -1,0 +1,161 @@
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+// Create axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('karetek_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle response errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('karetek_token');
+      localStorage.removeItem('karetek_user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ==================== AUTH API ====================
+export const authAPI = {
+  register: async (userData) => {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  },
+
+  login: async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  getMe: async () => {
+    const response = await api.get('/auth/me');
+    return response.data;
+  }
+};
+
+// ==================== CHAT API ====================
+export const chatAPI = {
+  createSession: async (data) => {
+    const response = await api.post('/chat/session', data);
+    return response.data;
+  },
+
+  sendMessage: async (sessionId, message, language) => {
+    const response = await api.post('/chat/message', { sessionId, message, language });
+    return response.data;
+  },
+
+  getHistory: async (sessionId) => {
+    const response = await api.get(`/chat/history/${sessionId}`);
+    return response.data;
+  },
+
+  generateSummary: async (sessionId) => {
+    const response = await api.post(`/chat/summary/${sessionId}`);
+    return response.data;
+  },
+
+  translate: async (text, targetLanguage) => {
+    const response = await api.post('/chat/translate', { text, targetLanguage });
+    return response.data;
+  }
+};
+
+// ==================== HEALTH RECORDS API ====================
+export const healthRecordsAPI = {
+  get: async () => {
+    const response = await api.get('/health-records');
+    return response.data;
+  },
+
+  update: async (data) => {
+    const response = await api.put('/health-records', data);
+    return response.data;
+  },
+
+  addMedication: async (medication) => {
+    const response = await api.post('/health-records/medications', medication);
+    return response.data;
+  },
+
+  addAllergy: async (allergy) => {
+    const response = await api.post('/health-records/allergies', allergy);
+    return response.data;
+  },
+
+  addCondition: async (condition) => {
+    const response = await api.post('/health-records/conditions', condition);
+    return response.data;
+  }
+};
+
+// ==================== APPOINTMENTS API ====================
+export const appointmentsAPI = {
+  getSlots: async (date) => {
+    const response = await api.get('/appointments/slots', { params: { date } });
+    return response.data;
+  },
+
+  book: async (appointmentData) => {
+    const response = await api.post('/appointments', appointmentData);
+    return response.data;
+  },
+
+  getAll: async () => {
+    const response = await api.get('/appointments');
+    return response.data;
+  },
+
+  cancel: async (id) => {
+    const response = await api.delete(`/appointments/${id}`);
+    return response.data;
+  }
+};
+
+// ==================== CONSULTATIONS API ====================
+export const consultationsAPI = {
+  getAll: async () => {
+    const response = await api.get('/consultations');
+    return response.data;
+  },
+
+  get: async (id) => {
+    const response = await api.get(`/consultations/${id}`);
+    return response.data;
+  }
+};
+
+// ==================== DOCTORS API ====================
+export const doctorsAPI = {
+  getAll: async () => {
+    const response = await api.get('/doctors');
+    return response.data;
+  }
+};
+
+// ==================== STATS API ====================
+export const statsAPI = {
+  get: async () => {
+    const response = await api.get('/stats');
+    return response.data;
+  }
+};
+
+export default api;
