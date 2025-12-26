@@ -733,10 +733,10 @@
 
 .sidebar-hipaa svg {
   flex-shrink: 0;
-  color: #0369a1
+  color: #0369a1;
   to {
     opacity: 1;
-    transform: scale(1);
+    transform:scale(1);
   }
 }
 
