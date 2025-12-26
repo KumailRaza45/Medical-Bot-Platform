@@ -1,31 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ChatInterface from '../components/ChatInterface';
 import { 
-  Shield, Lock, Check, Star, Video, FileText, 
+  Shield, Check, Video, FileText, 
   Clock, Users, Award, Stethoscope, Heart, 
-  MessageCircle, Calendar, Zap, Globe, Phone,
-  Activity, Droplet, TrendingUp
+  MessageCircle, Calendar, Globe, Phone,
+  Activity, Bot, Droplet, TrendingUp, Zap, Star, Lock
 } from 'lucide-react';
-import { statsAPI } from '../utils/api';
 import './HomePage.css';
 
 const HomePage = () => {
   const [searchParams] = useSearchParams();
   const sessionToLoad = searchParams.get('session');
   
-  const [stats, setStats] = useState({
-    totalConsultations: 2500000,
+  const [stats] = useState({
+    totalConsultations: 19908222,
     activeUsers: 150000,
     healthMetricsTracked: 500000
   });
-
-  // Static stats - no need to fetch from API
-  useEffect(() => {
-    // Stats are hardcoded above, no API call needed
-  }, []);
 
   const formatNumber = (num) => {
     if (num >= 1000000) {
@@ -34,71 +28,53 @@ const HomePage = () => {
     if (num >= 1000) {
       return (num / 1000).toFixed(0) + 'K+';
     }
-    return num.toString();
+    return num.toLocaleString();
   };
 
   return (
     <div className="home-page">
       <Header />
       
-      {/* Trust Bar */}
-      <div className="trust-bar">
-        <div className="trust-item">
-          <Shield size={18} />
-          <span>HIPAA Compliant</span>
-        </div>
-        <div className="trust-item">
-          <Lock size={18} />
-          <span>Private & Secure</span>
-        </div>
-        <div className="trust-item">
-          <Award size={18} />
-          <span>Trusted by 150K+ Users</span>
-        </div>
-        <div className="trust-item">
-          <Clock size={18} />
-          <span>Available 24/7</span>
-        </div>
-      </div>
-
-      {/* Hero Section - Chatbot First */}
+      {/* Hero Section - Clean & Minimal */}
       <section className="hero-section">
         <div className="hero-container-centered">
-          <div className="hero-header">
-            <div className="hero-badge">
-              <Zap size={14} />
-              <span>AI-Powered Healthcare - Bilingual Support</span>
-            </div>
-            <h1>
-              Hi, I'm <span className="text-gradient">Karetek</span>
-            </h1>
-            <p className="hero-subtitle">
-              <strong>Your AI medical assistant</strong> - Available 24/7 in English & Urdu (اردو)
-            </p>
+          
+          {/* AI Avatar */}
+          <div className="ai-avatar">
+            <Bot size={48} strokeWidth={1.5} />
           </div>
 
+          {/* Main Heading */}
+          <h1 className="hero-title">
+            Hi, I'm <span className="text-gradient">Karetek</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="hero-subtitle">
+            I'm your private and personal AI doctor.
+          </p>
+
+          {/* Stats Text */}
+          <p className="hero-stats-text">
+            As an AI doctor, my service is fast and free. I've already helped people <strong>{formatNumber(stats.totalConsultations)}</strong> times!
+          </p>
+
+          {/* Note */}
+          <p className="hero-note">
+            What can I help you with today?
+          </p>
+
+          {/* Chat Interface */}
           <div className="hero-chat-primary">
             <ChatInterface loadSessionId={sessionToLoad} />
           </div>
 
-          <div className="hero-info">
-            <div className="hero-stats-inline">
-              <div className="stat-item">
-                <span className="stat-number">{formatNumber(stats.totalConsultations)}</span>
-                <span className="stat-label">Consultations</span>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <span className="stat-number">$39</span>
-                <span className="stat-label">Video Visit</span>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-item">
-                <span className="stat-number">24/7</span>
-                <span className="stat-label">Available</span>
-              </div>
-            </div>
-          </div>
+          {/* HIPAA Note */}
+          <p className="hipaa-note">
+            <Shield size={14} />
+            HIPAA - Private
+          </p>
+
         </div>
       </section>
 

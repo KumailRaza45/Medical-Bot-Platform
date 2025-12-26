@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pages
 import HomePage from './pages/HomePage';
+import AvatarPage from './pages/AvatarPageNew';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -55,6 +56,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/avatar" element={<AvatarPage />} />
       <Route 
         path="/login" 
         element={

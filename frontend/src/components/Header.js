@@ -4,12 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Menu, X, User, LogOut, FileText, 
   Stethoscope, MessageSquare, Heart, ChevronDown,
-  Shield, Lock
+  Shield, Lock, Calendar, Activity, ChevronRight
 } from 'lucide-react';
 import './Header.css';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -43,47 +44,19 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-container">
-        {/* Logo */}
-        <Link to="/" className="header-logo">
-          <img 
-            src="/karetek-logo.png" 
-            alt="Karetek" 
-            className="logo-image"
-          />
-        </Link>
+        {/* Hamburger Menu Button */}
+        <button 
+          className="hamburger-menu-btn"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <Menu size={24} />
+        </button>
 
-        {/* Desktop Navigation */}
-        <nav className="header-nav desktop-nav">
-          <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
-            <MessageSquare size={18} />
-            <span>AI Consult</span>
-          </Link>
-          
-          {isAuthenticated && (
-            <>
-              <Link to="/consultations" className={`nav-link ${isActive('/consultations') ? 'active' : ''}`}>
-                <Stethoscope size={18} />
-                <span>My Consults</span>
-              </Link>
-              <Link to="/health-records" className={`nav-link ${isActive('/health-records') ? 'active' : ''}`}>
-                <FileText size={18} />
-                <span>Health Records</span>
-              </Link>
-              <Link to="/health-metrics" className={`nav-link ${isActive('/health-metrics') ? 'active' : ''}`}>
-                <Heart size={18} />
-                <span>Health Metrics</span>
-              </Link>
-            </>
-          )}
-        </nav>
+        {/* Spacer for minimal header */}
+        <div style={{ flex: 1 }}></div>
 
         {/* Right Section */}
         <div className="header-right">
-          {/* HIPAA Badge */}
-          <div className="hipaa-badge desktop-only">
-            <Lock size={14} />
-            <span>HIPAA · Private</span>
-          </div>
 
           {isAuthenticated ? (
             <div className="profile-menu-container" ref={profileMenuRef}>
@@ -134,11 +107,8 @@ const Header = () => {
             </div>
           ) : (
             <div className="auth-buttons">
-              <Link to="/login" className="btn btn-ghost">
-                Log in
-              </Link>
-              <Link to="/register" className="btn btn-primary">
-                Join Free
+              <Link to="/login" className="btn-minimal">
+                Log In
               </Link>
             </div>
           )}
@@ -150,6 +120,99 @@ const Header = () => {
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
+        </div>
+      </div>
+
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Menu */}
+      <div className={`sidebar-menu ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <Link to="/" className="sidebar-logo" onClick={() => setSidebarOpen(false)}>
+            <img 
+              src="/karetek-logo.png" 
+              alt="Karetek" 
+              className="logo-image"
+            />
+          </Link>
+          <button 
+            className="sidebar-close-btn"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* User Profile Section - Only for signed in users */}
+        {isAuthenticated && user && (
+          <div className="sidebar-user-section">
+            <div className="sidebar-user-avatar">
+              {user.firstName?.[0]}{user.lastName?.[0]}
+            </div>
+            <div className="sidebar-user-email">
+              {user.email}
+            </div>
+          </div>
+        )}
+
+        {/* Spacer to push footer to bottom */}
+        <div style={{ flex: 1 }}></div>
+
+        {!isAuthenticated && (
+          <div className="sidebar-cta">
+            <Link 
+              to="/register" 
+              className="btn-sidebar-cta"
+              onClick={() => setSidebarOpen(false)}
+            >
+              Join now free
+            </Link>
+            <p className="sidebar-cta-text">
+              Join today to save your consults and access more features
+            </p>
+          </div>
+        )}
+
+        <div className="sidebar-footer">
+          {!isAuthenticated ? (
+            <>
+              <Link 
+                to="/login" 
+                className="sidebar-footer-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <User size={16} />
+                <span>Login</span>
+              </Link>
+              <div className="sidebar-hipaa">
+                <Shield size={14} />
+                <span>HIPAA Compliant · Private & Secure</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <button 
+                className="sidebar-footer-link logout-link"
+                onClick={() => {
+                  handleLogout();
+                  setSidebarOpen(false);
+                }}
+              >
+                <LogOut size={16} />
+                <span>Sign Out</span>
+              </button>
+              <div className="sidebar-hipaa">
+                <Shield size={14} />
+                <span>HIPAA Compliant · Private & Secure</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

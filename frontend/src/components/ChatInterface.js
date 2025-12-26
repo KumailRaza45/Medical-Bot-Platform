@@ -10,16 +10,37 @@ import { useAuth } from '../context/AuthContext';
 import './ChatInterface.css';
 
 const welcomeMessages = {
-  en: `Hello! I'm Karetek, your AI medical assistant. I'm here to help you understand your health concerns and provide guidance.
-
-**Important:** I'm an AI assistant, not a licensed doctor. Always discuss my suggestions with a healthcare provider before making medical decisions.
+  en: `Hello! I'm Karetek, your AI medical assistant.
 
 What symptoms or health concerns would you like to discuss today?`,
-  ur: `السلام علیکم! میں کیریٹیک ہوں، آپ کا AI طبی معاون۔ میں آپ کی صحت کے خدشات کو سمجھنے اور رہنمائی فراہم کرنے میں مدد کے لیے حاضر ہوں۔
+  ur: `السلام علیکم! میں کیریٹیک ہوں، آپ کا AI طبی معاون۔
 
-**اہم:** میں ایک AI معاون ہوں، لائسنس یافتہ ڈاکٹر نہیں۔ کوئی بھی طبی فیصلہ کرنے سے پہلے ہمیشہ کسی صحت کی دیکھ بھال فراہم کنندہ سے بات کریں۔
+آج آپ کس علامات یا صحت کے مسائل پر بات کرنا چاہیں گے؟`,
+  ar: `مرحباً! أنا Karetek، مساعدتك الطبية الذكية.
 
-آج آپ کس علامات یا صحت کے مسائل پر بات کرنا چاہیں گے؟`
+ما هي الأعراض أو المخاوف الصحية التي تود مناقشتها اليوم؟`,
+  fr: `Bonjour! Je suis Karetek, votre assistante médicale IA.
+
+Quels symptômes ou préoccupations de santé aimeriez-vous discuter aujourd'hui?`,
+  es: `¡Hola! Soy Karetek, tu asistente médica IA.
+
+¿Qué síntomas o preocupaciones de salud te gustaría discutir hoy?`,
+  de: `Hallo! Ich bin Karetek, Ihre KI-Medizinassistentin.
+
+Welche Symptome oder gesundheitlichen Bedenken möchten Sie heute besprechen?`,
+  zh: `你好！我是 Karetek，你的人工智能医疗助手。
+
+你今天想讨论什么症状或健康问题？`
+};
+
+const languageNames = {
+  en: 'English',
+  ur: 'اردو',
+  ar: 'العربية',
+  fr: 'Français',
+  es: 'Español',
+  de: 'Deutsch',
+  zh: '中文'
 };
 
 const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
@@ -27,7 +48,8 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
-  const [language, setLanguage] = useState('en'); // 'en' or 'ur'
+  const [language, setLanguage] = useState('en'); // Supported: 'en', 'ur', 'ar', 'fr', 'es', 'de', 'zh'
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [summary, setSummary] = useState(null);
   const [isEmergency, setIsEmergency] = useState(false);
@@ -35,7 +57,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
   const [recognition, setRecognition] = useState(null);
   
   const inputRef = useRef(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated} = useAuth();
   const navigate = useNavigate();
 
   const initializeSession = useCallback(async () => {
@@ -243,8 +265,12 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
   };
 
   const toggleLanguage = async () => {
-    const newLang = language === 'en' ? 'ur' : 'en';
+    setShowLanguageMenu(!showLanguageMenu);
+  };
+
+  const selectLanguage = async (newLang) => {
     setLanguage(newLang);
+    setShowLanguageMenu(false);
     setIsLoading(true);
 
     try {
@@ -305,7 +331,16 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
       setIsRecording(false);
     } else {
       // Set language for speech recognition
-      recognition.lang = language === 'ur' ? 'ur-PK' : 'en-US';
+      const speechLangCodes = {
+        en: 'en-US',
+        ur: 'ur-PK',
+        ar: 'ar-SA',
+        fr: 'fr-FR',
+        es: 'es-ES',
+        de: 'de-DE',
+        zh: 'zh-CN'
+      };
+      recognition.lang = speechLangCodes[language] || 'en-US';
       recognition.start();
       setIsRecording(true);
     }
@@ -344,19 +379,30 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
           </div>
         </div>
         <div className="chat-header-right">
-          <button 
-            className="language-toggle-btn"
-            onClick={toggleLanguage}
-            disabled={isLoading}
-            title={language === 'en' ? 'Switch to Urdu' : 'Switch to English'}
-          >
-            {isLoading ? (
-              <Loader2 size={16} className="spinner" />
-            ) : (
+          <div className="language-selector">
+            <button 
+              className="language-toggle-btn"
+              onClick={toggleLanguage}
+              disabled={isLoading}
+              title="Select Language"
+            >
               <Globe size={16} />
+              <span>{languageNames[language]}</span>
+            </button>
+            {showLanguageMenu && (
+              <div className="language-menu">
+                {Object.entries(languageNames).map(([code, name]) => (
+                  <button
+                    key={code}
+                    className={`language-option ${language === code ? 'active' : ''}`}
+                    onClick={() => selectLanguage(code)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
             )}
-            <span>{language === 'en' ? 'اردو' : 'English'}</span>
-          </button>
+          </div>
           <div className="hipaa-badge">
             <Lock size={14} />
             <span>HIPAA · Private</span>
@@ -527,12 +573,6 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
             )}
           </button>
         </div>
-        <p className="chat-disclaimer">
-          {language === 'en' 
-            ? 'Karetek is an AI assistant, not a licensed doctor, and does not provide medical advice or care.'
-            : 'کیریٹیک ایک AI معاون ہے، لائسنس یافتہ ڈاکٹر نہیں، اور طبی مشورہ یا دیکھ بھال فراہم نہیں کرتا۔'
-          }
-        </p>
       </form>
 
       {/* Feedback */}

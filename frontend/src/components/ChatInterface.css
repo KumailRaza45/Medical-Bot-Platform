@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 650px;
+  max-height: 480px;
 
   background: white;
   border-radius: var(--radius-2xl);
@@ -73,7 +73,11 @@
   gap: 0.5rem;
 }
 
-/* Language Toggle Button */
+/* Language Selector */
+.language-selector {
+  position: relative;
+}
+
 .language-toggle-btn {
   display: flex;
   align-items: center;
@@ -99,7 +103,62 @@
   color: var(--primary-500);
 }
 
-/* Language Toggle Button */
+.language-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  min-width: 150px;
+  z-index: 100;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.language-option {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.language-option:last-child {
+  border-bottom: none;
+}
+
+.language-option:hover {
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+
+.language-option.active {
+  background: var(--primary-100);
+  color: var(--primary-700);
+  font-weight: 600;
+}
+
+/* Duplicate Language Toggle Button - keeping for legacy */
 .language-toggle-btn {
   display: flex;
   align-items: center;
@@ -290,6 +349,7 @@
   color: var(--gray-800);
   border: 1px solid var(--gray-200);
   border-bottom-left-radius: var(--radius-sm);
+  text-align: left;
 }
 
 .message.error .message-text {
