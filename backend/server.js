@@ -827,6 +827,19 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Karetek Medical Bot API',
+    status: 'running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api/*'
+    }
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
