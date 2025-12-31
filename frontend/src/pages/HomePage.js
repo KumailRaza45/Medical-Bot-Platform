@@ -7,7 +7,7 @@ import {
   Shield, Check, Video, FileText, 
   Clock, Users, Award, Stethoscope, Heart, 
   MessageCircle, Calendar, Globe, Phone,
-  Activity, Bot, Droplet, TrendingUp, Zap, Star, Lock
+  Activity, HeartPulse, Droplet, TrendingUp, Zap, Star, Lock
 } from 'lucide-react';
 import './HomePage.css';
 
@@ -16,7 +16,7 @@ const HomePage = () => {
   const sessionToLoad = searchParams.get('session');
   
   const [stats] = useState({
-    totalConsultations: 19908222,
+    totalConsultations: 2847,
     activeUsers: 150000,
     healthMetricsTracked: 500000
   });
@@ -41,7 +41,7 @@ const HomePage = () => {
           
           {/* AI Avatar */}
           <div className="ai-avatar">
-            <Bot size={48} strokeWidth={1.5} />
+            <HeartPulse size={48} strokeWidth={1.5} />
           </div>
 
           {/* Main Heading */}
@@ -69,10 +69,10 @@ const HomePage = () => {
             <ChatInterface loadSessionId={sessionToLoad} />
           </div>
 
-          {/* HIPAA Note */}
+          {/* Security Note */}
           <p className="hipaa-note">
             <Shield size={14} />
-            HIPAA - Private
+            Secure & Confidential
           </p>
 
         </div>

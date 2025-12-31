@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Send, Lock, AlertTriangle, Loader2, User, Bot,
+  Send, Lock, AlertTriangle, Loader2, User, HeartPulse,
   Video, Calendar, FileText, Share2, Download, 
   ThumbsUp, ThumbsDown, RefreshCw, Phone, Globe, Mic
 } from 'lucide-react';
@@ -10,27 +10,13 @@ import { useAuth } from '../context/AuthContext';
 import './ChatInterface.css';
 
 const welcomeMessages = {
-  en: `Hello! I'm Karetek, your AI medical assistant.
-
-What symptoms or health concerns would you like to discuss today?`,
-  ur: `السلام علیکم! میں کیریٹیک ہوں، آپ کا AI طبی معاون۔
-
-آج آپ کس علامات یا صحت کے مسائل پر بات کرنا چاہیں گے؟`,
-  ar: `مرحباً! أنا Karetek، مساعدتك الطبية الذكية.
-
-ما هي الأعراض أو المخاوف الصحية التي تود مناقشتها اليوم؟`,
-  fr: `Bonjour! Je suis Karetek, votre assistante médicale IA.
-
-Quels symptômes ou préoccupations de santé aimeriez-vous discuter aujourd'hui?`,
-  es: `¡Hola! Soy Karetek, tu asistente médica IA.
-
-¿Qué síntomas o preocupaciones de salud te gustaría discutir hoy?`,
-  de: `Hallo! Ich bin Karetek, Ihre KI-Medizinassistentin.
-
-Welche Symptome oder gesundheitlichen Bedenken möchten Sie heute besprechen?`,
-  zh: `你好！我是 Karetek，你的人工智能医疗助手。
-
-你今天想讨论什么症状或健康问题？`
+  en: `What symptoms or health concerns would you like to discuss today?`,
+  ur: `آج آپ کس علامات یا صحت کے مسائل پر بات کرنا چاہیں گے؟`,
+  ar: `ما هي الأعراض أو المخاوف الصحية التي تود مناقشتها اليوم؟`,
+  fr: `Quels symptômes ou préoccupations de santé aimeriez-vous discuter aujourd'hui?`,
+  es: `¿Qué síntomas o preocupaciones de salud te gustaría discutir hoy?`,
+  de: `Welche Symptome oder gesundheitlichen Bedenken möchten Sie heute besprechen?`,
+  zh: `你今天想讨论什么症状或健康问题？`
 };
 
 const languageNames = {
@@ -41,6 +27,16 @@ const languageNames = {
   es: 'Español',
   de: 'Deutsch',
   zh: '中文'
+};
+
+const placeholderTexts = {
+  en: 'Type your message...',
+  ur: 'اپنا پیغام لکھیں...',
+  ar: 'اكتب رسالتك...',
+  fr: 'Tapez votre message...',
+  es: 'Escribe tu mensaje...',
+  de: 'Geben Sie Ihre Nachricht ein...',
+  zh: '输入您的消息...'
 };
 
 const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
@@ -368,10 +364,10 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
       <div className="chat-header">
         <div className="chat-header-left">
           <div className="chat-avatar">
-            <Bot size={24} />
+            <HeartPulse size={24} />
           </div>
           <div>
-            <h3>{language === 'en' ? 'Karetek AI Consult' : 'کیریٹیک AI مشاورت'}</h3>
+            <h3>{language === 'en' ? 'AI Medical Consult' : 'AI طبی مشاورت'}</h3>
             <div className="chat-status">
               <span className="status-dot"></span>
               <span>{language === 'en' ? 'Online 24/7' : 'آن لائن 24/7'}</span>
@@ -405,7 +401,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
           </div>
           <div className="hipaa-badge">
             <Lock size={14} />
-            <span>HIPAA · Private</span>
+            <span>Secure & Private</span>
           </div>
         </div>
       </div>
@@ -436,7 +432,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
               {message.role === 'user' ? (
                 <User size={18} />
               ) : (
-                <Bot size={18} />
+                <HeartPulse size={18} />
               )}
             </div>
             <div className="message-content">
@@ -457,7 +453,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
         {isLoading && (
           <div className="message assistant loading">
             <div className="message-avatar">
-              <Bot size={18} />
+              <HeartPulse size={18} />
             </div>
             <div className="message-content">
               <div className="typing-indicator">
@@ -555,7 +551,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
                 handleSendMessage(e);
               }
             }}
-            placeholder={language === 'en' ? 'Describe your symptoms or health concern...' : 'اپنی علامات یا صحت کی تشویش بیان کریں...'}
+            placeholder={placeholderTexts[language] || placeholderTexts.en}
             className="chat-input"
             rows={1}
             disabled={isLoading}

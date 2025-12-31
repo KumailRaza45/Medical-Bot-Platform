@@ -110,6 +110,9 @@ const Header = () => {
               <Link to="/login" className="btn-minimal">
                 Log In
               </Link>
+              <Link to="/register" className="btn-primary">
+                Sign Up
+              </Link>
             </div>
           )}
 

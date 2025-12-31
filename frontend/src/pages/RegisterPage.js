@@ -110,7 +110,7 @@ const RegisterPage = () => {
           </Link>
           
           <div className="auth-branding-content">
-            <h1>Join MediBot Free</h1>
+            <h1>Join Karetek Free</h1>
             <p>
               Create your free account to save consultations, manage your health records, 
               and track your personal health metrics.
