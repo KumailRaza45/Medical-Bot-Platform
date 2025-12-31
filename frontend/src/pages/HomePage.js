@@ -56,7 +56,7 @@ const HomePage = () => {
 
           {/* Stats Text */}
           <p className="hero-stats-text">
-            As an AI doctor, my service is fast and free. I've already helped people <strong>{formatNumber(stats.totalConsultations)}</strong> times!
+            As an AI Doctor, my service is fast, free, and trusted by people worldwide.
           </p>
 
           {/* Note */}
