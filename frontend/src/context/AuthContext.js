@@ -80,6 +80,26 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
+  const loginWithToken = useCallback(async (token) => {
+    setLoading(true);
+    setError(null);
+    try {
+      localStorage.setItem('karetek_token', token);
+      const userData = await authAPI.getMe();
+      localStorage.setItem('karetek_user', JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      localStorage.removeItem('karetek_token');
+      localStorage.removeItem('karetek_user');
+      const errorMessage = err.response?.data?.error || 'OAuth login failed';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const value = {
     user,
     loading,
@@ -87,6 +107,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    loginWithToken,
     isAuthenticated: !!user
   };
 

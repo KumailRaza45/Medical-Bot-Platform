@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import AvatarPage from './pages/AvatarPageNew';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import HealthRecordsPage from './pages/HealthRecordsPage';
 import ConsultationsPage from './pages/ConsultationsPage';
@@ -57,6 +58,7 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
       <Route path="/avatar" element={<AvatarPage />} />
+      <Route path="/auth/callback" element={<OAuthCallbackPage />} />
       <Route 
         path="/login" 
         element={

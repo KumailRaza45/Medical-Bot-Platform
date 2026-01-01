@@ -7,9 +7,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const OpenAI = require('openai');
 const supabase = require('./config/supabase');
+const passport = require('./config/passport');
+const session = require('express-session');
 
-// Import avatar routes
+// Import routes
 const avatarRoutes = require('./routes/avatar');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -50,6 +53,21 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '10mb' }));
+
+// Session middleware for OAuth (must come before passport)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'karetek_session_secret_2025',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -220,7 +238,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     }
 
     const { password_hash, ...userWithoutPassword } = user;
-    res.json({ user: userWithoutPassword });
+    res.json(userWithoutPassword);
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -795,6 +813,10 @@ app.delete('/api/health-records/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// ==================== OAUTH ROUTES ====================
+
+app.use('/auth', authRoutes);
 
 // ==================== AVATAR ROUTES ====================
 
