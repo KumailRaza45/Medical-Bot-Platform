@@ -816,7 +816,7 @@ app.delete('/api/health-records/:id', authenticateToken, async (req, res) => {
 
 // ==================== OAUTH ROUTES ====================
 
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // ==================== AVATAR ROUTES ====================
 
