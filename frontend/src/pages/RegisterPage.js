@@ -46,7 +46,7 @@ const RegisterPage = () => {
       return false;
     }
     if (!formData.agreeTerms || !formData.agreeHipaa) {
-      setError('Please agree to the terms and HIPAA consent');
+      setError('Please agree to the terms and privacy consent');
       return false;
     }
     return true;
@@ -142,7 +142,7 @@ const RegisterPage = () => {
 
           <div className="auth-trust">
             <Shield size={16} />
-            <span>HIPAA Compliant · Your data is private and secure</span>
+            <span>Secure & Private · Your data is fully protected</span>
           </div>
         </div>
 
@@ -325,7 +325,7 @@ const RegisterPage = () => {
                     onChange={handleChange}
                   />
                   <span>
-                    I consent to HIPAA-compliant storage of my health information and 
+                    I consent to secure and private storage of my health information and 
                     understand that Karetek is an AI assistant, not a licensed doctor
                   </span>
                 </label>

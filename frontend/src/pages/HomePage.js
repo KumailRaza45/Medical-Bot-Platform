@@ -133,7 +133,7 @@ const HomePage = () => {
                 history, medications, and test results anytime.
               </p>
               <ul className="feature-list">
-                <li><Check size={16} /> HIPAA secure</li>
+                <li><Check size={16} /> Your data is protected</li>
                 <li><Check size={16} /> Easy sharing</li>
                 <li><Check size={16} /> Complete history</li>
               </ul>
@@ -294,7 +294,7 @@ const HomePage = () => {
               <div className="privacy-badge">
                 <Shield size={20} />
                 <div>
-                  <strong>HIPAA Compliant</strong>
+                  <strong>Secure & Private</strong>
                   <span>Healthcare industry standard</span>
                 </div>
               </div>

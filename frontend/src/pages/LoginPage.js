@@ -89,7 +89,7 @@ const LoginPage = () => {
 
           <div className="auth-trust">
             <Shield size={16} />
-            <span>HIPAA Compliant · Your data is private and secure</span>
+            <span>Secure & Private · Your data is fully protected</span>
           </div>
         </div>
 

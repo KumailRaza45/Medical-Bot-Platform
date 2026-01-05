@@ -728,7 +728,7 @@ const HealthRecordsPage = () => {
             </div>
             <div className="hipaa-badge">
               <Shield size={16} />
-              <span>HIPAA Secure</span>
+              <span>Secure & Private</span>
             </div>
           </div>
 

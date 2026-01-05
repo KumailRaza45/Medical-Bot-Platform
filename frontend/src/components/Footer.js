@@ -23,7 +23,7 @@ const Footer = () => {
             </Link>
             <p className="footer-tagline">
               Your trusted AI doctor. Get expert medical guidance 24/7 with personalized 
-              care plans in seconds. HIPAA compliant and always private.
+              care plans in seconds. Secure, private, and always confidential.
             </p>
             <div className="footer-social">
               <a href="#" aria-label="Facebook" className="social-link">
@@ -89,13 +89,13 @@ const Footer = () => {
             <ul>
               <li><Link to="/privacy">Privacy Policy</Link></li>
               <li><Link to="/terms">Terms of Service</Link></li>
-              <li><Link to="/">HIPAA Compliance</Link></li>
+              <li><Link to="/">Privacy & Security</Link></li>
               <li><Link to="/">LegitScript Certified</Link></li>
             </ul>
             <div className="footer-badges">
               <div className="cert-badge">
                 <Shield size={16} />
-                <span>HIPAA</span>
+                <span>Secure</span>
               </div>
               <div className="cert-badge">
                 <Lock size={16} />

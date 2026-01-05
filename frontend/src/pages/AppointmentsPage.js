@@ -303,7 +303,7 @@ const AppointmentsPage = () => {
 
         <div className="hipaa-notice">
           <Shield size={18} />
-          <span>Your visit is HIPAA-compliant and completely private</span>
+          <span>Your visit is secure and completely private</span>
         </div>
       </div>
 

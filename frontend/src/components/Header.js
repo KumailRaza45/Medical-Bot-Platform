@@ -195,7 +195,7 @@ const Header = () => {
               </Link>
               <div className="sidebar-hipaa">
                 <Shield size={14} />
-                <span>HIPAA Compliant · Private & Secure</span>
+                <span>Secure & Private · Your Data Protected</span>
               </div>
             </>
           ) : (
@@ -212,7 +212,7 @@ const Header = () => {
               </button>
               <div className="sidebar-hipaa">
                 <Shield size={14} />
-                <span>HIPAA Compliant · Private & Secure</span>
+                <span>Secure & Private · Your Data Protected</span>
               </div>
             </>
           )}
@@ -292,7 +292,7 @@ const Header = () => {
 
             <div className="mobile-hipaa">
               <Shield size={18} />
-              <span>HIPAA Compliant · Your data is private and secure</span>
+              <span>Secure & Private · Your data is fully protected</span>
             </div>
           </nav>
         </div>
