@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { 
   Send, Lock, AlertTriangle, Loader2, User, HeartPulse,
   Video, Calendar, FileText, Share2, Download, 
-  ThumbsUp, ThumbsDown, RefreshCw, Phone, Globe, Mic
+  ThumbsUp, ThumbsDown, RefreshCw, Phone, Globe, Mic,
+  Paperclip, X, Image as ImageIcon
 } from 'lucide-react';
 import { chatAPI, consultationsAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -51,8 +54,11 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
   const [isEmergency, setIsEmergency] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const { isAuthenticated} = useAuth();
   const navigate = useNavigate();
 
@@ -131,7 +137,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
     } else if (loadSessionId && loadSessionId !== sessionId) {
       loadExistingSession(loadSessionId);
     }
-  }, [sessionId, initializeSession, loadSessionId]);
+  }, [sessionId, initializeSession, loadSessionId, loadExistingSession]);
 
   useEffect(() => {
     // Initialize speech recognition
@@ -163,8 +169,58 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
-    if (!inputValue.trim() || isLoading) return;
+    if ((!inputValue.trim() && !selectedImage) || isLoading) return;
 
+    // Handle image upload with question
+    if (selectedImage) {
+      const userMessage = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: inputValue.trim() || 'What can you tell me about this medical image?',
+        timestamp: new Date().toISOString(),
+        hasImage: true,
+        imagePreview: imagePreview
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+      setInputValue('');
+      const imageToSend = selectedImage;
+      const questionToSend = userMessage.content;
+      setSelectedImage(null);
+      setImagePreview(null);
+      setIsLoading(true);
+
+      try {
+        const response = await chatAPI.analyzeImage(imageToSend, questionToSend, language, sessionId);
+        
+        const assistantMessage = {
+          id: Date.now().toString() + '_assistant',
+          role: 'assistant',
+          content: response.message,
+          timestamp: new Date().toISOString(),
+          saved: response.saved
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+      } catch (error) {
+        console.error('Failed to analyze image:', error);
+        
+        const errorMessage = {
+          id: Date.now().toString() + '_error',
+          role: 'assistant',
+          content: error.response?.data?.error || "I apologize, but I'm having trouble analyzing the image. Please ensure it's a medical-related image and try again.",
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Regular text message
     const userMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -179,7 +235,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
     try {
       // Prepare messages in OpenAI format
       const chatMessages = messages
-        .filter(m => m.id !== 'welcome')
+        .filter(m => m.id !== 'welcome' && !m.hasImage)
         .map(m => ({ role: m.role, content: m.content }));
       chatMessages.push({ role: 'user', content: userMessage.content });
 
@@ -342,20 +398,49 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
     }
   };
 
-  const formatMessage = (content) => {
-    // Simple markdown-like formatting
-    return content
-      .split('\n')
-      .map((line, i) => {
-        // Bold text
-        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        // Bullet points
-        if (line.startsWith('- ') || line.startsWith('• ')) {
-          return `<li key="${i}">${line.substring(2)}</li>`;
-        }
-        return `<p key="${i}">${line}</p>`;
-      })
-      .join('');
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert(language === 'en' 
+          ? 'Please select a valid image file (JPEG, PNG, GIF, or WebP)'
+          : 'براہ کرم ایک درست تصویری فائل منتخب کریں (JPEG، PNG، GIF، یا WebP)'
+        );
+        return;
+      }
+
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert(language === 'en' 
+          ? 'Image size must be less than 10MB'
+          : 'تصویر کا سائز 10MB سے کم ہونا چاہیے'
+        );
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAttachClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -436,10 +521,37 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
               )}
             </div>
             <div className="message-content">
-              <div 
-                className="message-text"
-                dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
-              />
+              {message.hasImage && message.imagePreview && (
+                <div className="message-image">
+                  <img src={message.imagePreview} alt="Medical scan or report" />
+                  <div className="image-indicator">
+                    <ImageIcon size={14} />
+                    <span>Medical Image</span>
+                  </div>
+                </div>
+              )}
+              <div className="message-text">
+                {/* eslint-disable-next-line jsx-a11y/heading-has-content */}
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({node, ...props}) => <p style={{margin: '0.5em 0'}} {...props} />,
+                    ul: ({node, ...props}) => <ul style={{marginLeft: '1.2em', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
+                    ol: ({node, ...props}) => <ol style={{marginLeft: '1.2em', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
+                    li: ({node, ...props}) => <li style={{marginBottom: '0.25em'}} {...props} />,
+                    h1: ({node, ...props}) => <h1 style={{fontSize: '1.5em', fontWeight: 'bold', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
+                    h2: ({node, ...props}) => <h2 style={{fontSize: '1.3em', fontWeight: 'bold', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
+                    h3: ({node, ...props}) => <h3 style={{fontSize: '1.1em', fontWeight: 'bold', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
+                    strong: ({node, ...props}) => <strong style={{fontWeight: '600'}} {...props} />,
+                    code: ({node, inline, ...props}) => 
+                      inline ? 
+                        <code style={{backgroundColor: 'var(--gray-100)', padding: '0.2em 0.4em', borderRadius: '3px', fontSize: '0.9em'}} {...props} /> : 
+                        <code style={{display: 'block', backgroundColor: 'var(--gray-100)', padding: '1em', borderRadius: '6px', overflowX: 'auto', fontSize: '0.9em'}} {...props} />
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              </div>
               <span className="message-time">
                 {new Date(message.timestamp).toLocaleTimeString([], { 
                   hour: '2-digit', 
@@ -526,6 +638,38 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
       {/* Input Area */}
       <form className="chat-input-area" onSubmit={handleSendMessage}>
         <div className="chat-input-wrapper">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+            style={{ display: 'none' }}
+          />
+          
+          {/* Inline Image Preview Chip */}
+          {imagePreview && (
+            <div className="image-preview-chip">
+              <img src={imagePreview} alt="Selected" className="preview-thumb" />
+              <button
+                type="button"
+                className="remove-chip-btn"
+                onClick={handleRemoveImage}
+                title="Remove"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+          
+          <button
+            type="button"
+            className="attach-btn"
+            onClick={handleAttachClick}
+            disabled={isLoading || !!selectedImage}
+            title={language === 'en' ? 'Attach medical image' : 'طبی تصویر منسلک کریں'}
+          >
+            <Paperclip size={20} />
+          </button>
           <button
             type="button"
             className={`voice-btn ${isRecording ? 'recording' : ''}`}
@@ -551,7 +695,11 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
                 handleSendMessage(e);
               }
             }}
-            placeholder={placeholderTexts[language] || placeholderTexts.en}
+            placeholder={
+              selectedImage 
+                ? (language === 'en' ? 'Ask about this medical image...' : 'اس طبی تصویر کے بارے میں پوچھیں...')
+                : (placeholderTexts[language] || placeholderTexts.en)
+            }
             className="chat-input"
             rows={1}
             disabled={isLoading}
@@ -560,7 +708,7 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
           <button 
             type="submit" 
             className="send-btn"
-            disabled={!inputValue.trim() || isLoading}
+            disabled={(!inputValue.trim() && !selectedImage) || isLoading}
           >
             {isLoading ? (
               <Loader2 size={20} className="spinner" />

@@ -95,6 +95,25 @@ export const chatAPI = {
   translate: async (messages, targetLanguage) => {
     const response = await api.post('/chat/translate', { messages, targetLanguage });
     return response.data;
+  },
+
+  analyzeImage: async (imageFile, question, language, sessionId) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    formData.append('question', question);
+    formData.append('language', language);
+    if (sessionId) {
+      formData.append('sessionId', sessionId);
+    }
+
+    const token = localStorage.getItem('karetek_token');
+    const response = await axios.post(`${API_BASE_URL}/chat/analyze-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    });
+    return response.data;
   }
 };
 

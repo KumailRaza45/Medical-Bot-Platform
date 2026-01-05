@@ -9,10 +9,33 @@ const OpenAI = require('openai');
 const supabase = require('./config/supabase');
 const passport = require('./config/passport');
 const session = require('express-session');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // Import routes
 const avatarRoutes = require('./routes/avatar');
 const authRoutes = require('./routes/auth');
+
+// Configure multer for image uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -630,6 +653,106 @@ app.post('/api/chat', optionalAuthenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Chat error:', error);
     res.status(500).json({ error: 'Failed to process chat request' });
+  }
+});
+
+// Image Analysis Endpoint with Vision API
+app.post('/api/chat/analyze-image', optionalAuthenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { question, language = 'en', sessionId } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    if (!question) {
+      return res.status(400).json({ error: 'Question about the image is required' });
+    }
+
+    // Convert image buffer to base64
+    const base64Image = req.file.buffer.toString('base64');
+    const imageDataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
+
+    // Medical-focused system prompt for image analysis
+    const medicalImageSystemPrompt = `You are Karetek, an AI medical assistant with image analysis capabilities. 
+
+CRITICAL RULES:
+1. ONLY respond to medical-related images and questions (X-rays, MRIs, CT scans, skin conditions, injuries, medical reports, prescriptions, lab results, symptoms visible in images, medical devices, etc.)
+2. If the image is NOT medical-related (e.g., landscapes, food, people doing activities, objects, etc.), respond with: "I can only analyze medical-related images such as X-rays, MRIs, skin conditions, injuries, medical reports, or visible symptoms. Please upload a medical image or ask a health-related question."
+3. For medical images, provide detailed, accurate analysis
+4. Always include appropriate disclaimers about consulting healthcare professionals
+5. If image quality is poor, mention it affects the analysis
+6. Be cautious and conservative in your assessments
+7. Never provide definitive diagnoses - only observations and suggestions
+8. Mention when professional medical examination is recommended
+
+Language: Respond in ${language === 'en' ? 'English' : language === 'ur' ? 'Urdu' : language === 'ar' ? 'Arabic' : language === 'fr' ? 'French' : language === 'es' ? 'Spanish' : language === 'de' ? 'German' : language === 'zh' ? 'Chinese' : 'English'}`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: medicalImageSystemPrompt
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: question
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageDataUrl,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0.7
+    });
+
+    const aiResponse = completion.choices[0].message.content;
+
+    // Save to consultation if user is authenticated
+    if (req.user && sessionId) {
+      const imageMessage = {
+        role: 'user',
+        content: `[Image uploaded] ${question}`,
+        hasImage: true
+      };
+      
+      const aiMessage = {
+        role: 'assistant',
+        content: aiResponse
+      };
+
+      await supabase
+        .from('consultations')
+        .upsert([{
+          user_id: req.user.id,
+          session_id: sessionId,
+          language,
+          messages: [imageMessage, aiMessage]
+        }], {
+          onConflict: 'session_id'
+        });
+    }
+
+    res.json({
+      message: aiResponse,
+      saved: !!req.user
+    });
+  } catch (error) {
+    console.error('Image analysis error:', error);
+    if (error.message && error.message.includes('image files')) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Failed to analyze image' });
   }
 });
 
