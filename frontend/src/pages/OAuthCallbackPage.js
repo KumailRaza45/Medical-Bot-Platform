@@ -11,7 +11,6 @@ const OAuthCallbackPage = () => {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const token = searchParams.get('token');
-      const provider = searchParams.get('provider');
       const error = searchParams.get('error');
 
       if (error) {

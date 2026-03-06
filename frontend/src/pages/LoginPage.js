@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Heart, Mail, Lock, Eye, EyeOff, Loader2, Shield, MessageCircle, FileText, Activity } from 'lucide-react';
+import { Heart, Mail, Lock, Eye, EyeOff, Loader2, Shield, MessageCircle, FileText } from 'lucide-react';
 import './AuthPages.css';
 
 const LoginPage = () => {

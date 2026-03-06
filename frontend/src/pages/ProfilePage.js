@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { useAuth } from '../context/AuthContext';
 import { profileAPI } from '../utils/api';
 import { 
-  User, Mail, Phone, MapPin, Calendar, Heart, Scale, 
-  Ruler, Droplet, Activity, AlertCircle, Save, Edit2
+  User, MapPin, Calendar, Heart, Scale, 
+  Droplet, Activity, AlertCircle, Save, Edit2
 } from 'lucide-react';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,7 +42,6 @@ const ProfilePage = () => {
     try {
       setLoading(true);
       const data = await profileAPI.get();
-      setProfile(data.profile);
       setFormData({
         firstName: data.profile.first_name || '',
         lastName: data.profile.last_name || '',
