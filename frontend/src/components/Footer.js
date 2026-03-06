@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Heart, Facebook, Twitter, Linkedin, Instagram, Youtube,
-  Shield, Lock, Award, Smartphone
+  Facebook, Twitter, Linkedin, Instagram, Youtube,
+  Shield, Lock
 } from 'lucide-react';
 import './Footer.css';
 
@@ -26,19 +26,19 @@ const Footer = () => {
               care plans in seconds. Secure, private, and always confidential.
             </p>
             <div className="footer-social">
-              <a href="#" aria-label="Facebook" className="social-link">
+              <a href="https://facebook.com" aria-label="Facebook" className="social-link" target="_blank" rel="noopener noreferrer">
                 <Facebook size={18} />
               </a>
-              <a href="#" aria-label="Twitter" className="social-link">
+              <a href="https://twitter.com" aria-label="Twitter" className="social-link" target="_blank" rel="noopener noreferrer">
                 <Twitter size={18} />
               </a>
-              <a href="#" aria-label="LinkedIn" className="social-link">
+              <a href="https://linkedin.com" aria-label="LinkedIn" className="social-link" target="_blank" rel="noopener noreferrer">
                 <Linkedin size={18} />
               </a>
-              <a href="#" aria-label="Instagram" className="social-link">
+              <a href="https://instagram.com" aria-label="Instagram" className="social-link" target="_blank" rel="noopener noreferrer">
                 <Instagram size={18} />
               </a>
-              <a href="#" aria-label="YouTube" className="social-link">
+              <a href="https://youtube.com" aria-label="YouTube" className="social-link" target="_blank" rel="noopener noreferrer">
                 <Youtube size={18} />
               </a>
             </div>

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Menu, X, User, LogOut, FileText, 
   Stethoscope, MessageSquare, Heart, ChevronDown,
-  Shield, Lock, Calendar, Activity, ChevronRight
+  Shield
 } from 'lucide-react';
 import './Header.css';
 
