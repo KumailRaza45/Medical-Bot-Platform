@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ChatInterface from '../components/ChatInterface';
 import { 
-  Shield, Check, Video, FileText, 
-  Clock, Users, Award, Stethoscope, Heart, 
-  MessageCircle, Calendar, Globe, Phone,
-  Activity, HeartPulse, Droplet, TrendingUp, Zap, Star, Lock,
+  Shield, Check, FileText, 
+  Clock, Users, Award, Heart, 
+  MessageCircle, 
+  Activity, HeartPulse, Droplet, TrendingUp, Star, Lock,
   Smartphone
 } from 'lucide-react';
 import './HomePage.css';
@@ -15,22 +15,6 @@ import './HomePage.css';
 const HomePage = () => {
   const [searchParams] = useSearchParams();
   const sessionToLoad = searchParams.get('session');
-  
-  const [stats] = useState({
-    totalConsultations: 2847,
-    activeUsers: 150000,
-    healthMetricsTracked: 500000
-  });
-
-  const formatNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M+';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(0) + 'K+';
-    }
-    return num.toLocaleString();
-  };
 
   return (
     <div className="home-page">
