@@ -126,6 +126,82 @@
   color: var(--gray-400);
 }
 
+/* Mobile App Download Section */
+.mobile-app-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--primary-100);
+}
+
+.app-download-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.app-download-header svg {
+  color: var(--primary-600);
+}
+
+.app-download-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.app-store-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--gray-900);
+  color: white;
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--gray-900);
+  min-width: 160px;
+}
+
+.app-store-btn:hover {
+  background: var(--gray-800);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.app-store-btn svg {
+  flex-shrink: 0;
+}
+
+.store-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.download-on {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  opacity: 0.9;
+  line-height: 1;
+}
+
+.store-name {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 0.125rem;
+}
+
 .hero-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -829,6 +905,31 @@
   .hipaa-note {
     font-size: 0.75rem;
     margin-top: 0.5rem;
+  }
+
+  .mobile-app-section {
+    margin-top: 1.25rem;
+    padding: 1rem;
+  }
+
+  .app-download-header {
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .app-download-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .app-store-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem 1rem;
+  }
+
+  .store-name {
+    font-size: 0.9375rem;
   }
 
   .hero-header h1 {
