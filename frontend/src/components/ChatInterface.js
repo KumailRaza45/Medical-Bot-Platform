@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { 
   Send, Lock, AlertTriangle, Loader2, User, HeartPulse,
-  Video, Calendar, FileText, Share2, Download, 
+  Video, FileText, Share2, Download, 
   ThumbsUp, ThumbsDown, RefreshCw, Phone, Globe, Mic,
   Paperclip, X, Image as ImageIcon
 } from 'lucide-react';
@@ -289,12 +289,6 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
     
     setIsLoading(true);
     try {
-      // Generate summary from current messages
-      const conversationText = messages
-        .filter(m => m.id !== 'welcome')
-        .map(m => `${m.role}: ${m.content}`)
-        .join('\n\n');
-      
       setSummary({
         symptoms: 'Based on conversation',
         recommendations: 'Please consult with your healthcare provider',
@@ -539,8 +533,11 @@ const ChatInterface = ({ loadSessionId = null, onSessionChange = null }) => {
                     ul: ({node, ...props}) => <ul style={{marginLeft: '1.2em', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
                     ol: ({node, ...props}) => <ol style={{marginLeft: '1.2em', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
                     li: ({node, ...props}) => <li style={{marginBottom: '0.25em'}} {...props} />,
+                    // eslint-disable-next-line jsx-a11y/heading-has-content
                     h1: ({node, ...props}) => <h1 style={{fontSize: '1.5em', fontWeight: 'bold', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
+                    // eslint-disable-next-line jsx-a11y/heading-has-content
                     h2: ({node, ...props}) => <h2 style={{fontSize: '1.3em', fontWeight: 'bold', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
+                    // eslint-disable-next-line jsx-a11y/heading-has-content
                     h3: ({node, ...props}) => <h3 style={{fontSize: '1.1em', fontWeight: 'bold', marginTop: '0.5em', marginBottom: '0.5em'}} {...props} />,
                     strong: ({node, ...props}) => <strong style={{fontWeight: '600'}} {...props} />,
                     code: ({node, inline, ...props}) => 

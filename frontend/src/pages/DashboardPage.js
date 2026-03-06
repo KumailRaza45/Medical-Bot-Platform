@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { 
-  MessageCircle, Calendar, FileText, Video, Clock, 
+  MessageCircle, FileText, Clock, 
   ChevronRight, Activity, Pill, AlertCircle, Plus,
   TrendingUp, Heart, Stethoscope, Droplet
 } from 'lucide-react';
@@ -78,14 +78,6 @@ const DashboardPage = () => {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit'
     });
   };
 

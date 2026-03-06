@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Mic, Volume2, VolumeX, Send, Loader2, X, Home, StopCircle
+  Mic, Volume2, VolumeX, Send, Loader2, Home, StopCircle
 } from 'lucide-react';
 import { chatAPI } from '../utils/api';
 import Header from '../components/Header';
@@ -74,6 +74,7 @@ const AvatarPage = () => {
     }
 
     // Don't auto-speak on page load - let user initiate conversation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update welcome message when language changes

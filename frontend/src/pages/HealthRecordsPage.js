@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { 
   FileText, Pill, AlertCircle, Activity, Heart, Plus, 
-  Edit2, Trash2, X, Check, Calendar, User, Shield
+  Edit2, Trash2, X, Check, User, Shield
 } from 'lucide-react';
 import { healthRecordsAPI, healthMetricsAPI } from '../utils/api';
 import './HealthRecordsPage.css';
